@@ -1,41 +1,30 @@
-# Download and Launch kafka broker server
-```
-cd VM; 
-<Merge files to create a OVA file>
-```
-### Launch VM
-```
-<Import OVA file as VM>
-```
-
-### Get IP of the server
-ARPPing .sh
-```
-#!/bin/bash
-
-# List network interface names
-interface_names=($(ip link show | awk -F: '$0 !~ "lo|vir|docker" {print $2}'))
-
-# Iterate through interface names and ping them
-for interface in "${interface_names[@]}"; do
-    echo "Pinging $interface..."
-    ping -c 4 -I $interface 8.8.8.8  # Change the target IP address if needed
-    echo "----------------------------------------"
-done
-```
+# Download and Launch kafka Broker, Producer and Client as a single docker
+1. Download and build `docker`
 
 
-```
-$ VBoxManage showvminfo bitnami-kafka | grep MAC | awk -F':' '{print $3}'| awk -F',' '{print $1}'|awk '{$1=$1};1'| tr '[:upper:]' '[:lower:]' | sed 's/../&:/g;s/.$//' ### Get mac address of VM
-$ 
-$ VBoxManage guestproperty enumerate {`VBoxManage list runningvms | awk -F"{" '{print $2}'` | grep IP | awk -F"," '{print $2}' | awk '{print $2}'
-```
 
+1. Launch kafka broker
+    ```
+    cd kafka; sudo docker-compose up -d
+    ```
+1. Open *two* interactive terminal in the container and use them for producer and consumer respectively:
+    ```
+    sudo docker exec -it kafka-kafka-1 bash
+    ```
+    1. Navigate to the following directory `/opt/bitnami/kafka/bin` inside the kafka broker
+        ```
+        cd opt/bitnami/kafka/bin
+        ```
+    1. Now, let’s create our first topic. Execute the following command:
+        ```
+        kafka-topics.sh --create --bootstrap-server 127.0.0.1:9092 --replication-factor 1 --partitions 1 --topic room_1
+        ```
+    1. Test with inbuilt producer / consumer script
+        1.
+            ```
+            kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --producer.config /opt/bitnami/kafka/config/producer.properties --topic room_1
+            ```
+        1. 
+            ``` kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --consumer.config /opt/bitnami/kafka/config/consumer.properties --topic room_1 --from-beginning 
+            ```
 
-# OLD (Purge later)
-```
-sudo docker-compose pull          # Pull dockers
-sudo docker-compose build         # Build dockers
-sudo docker-compose run consumer  # Run producer
-sudo docker-compose run producer  # Run consumer
-```
